@@ -163,6 +163,7 @@
   .who{ flex:1; min-width:0; }
   .who .nm{
     font-size: 15px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: .01em;
     white-space: nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .who .meta{ font-size: 11.5px; color: var(--text-muted); margin-top:1px; }
@@ -244,8 +245,8 @@
    4. Ganti FAMILY_TITLE / FAMILY_SUBTITLE sesuai nama keluarga besar kamu.
    ========================================================================= */
 
-  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXTxGZBb2t4SAhQn1WnhJa4Vu4nCTwLbjWyd8YzIWq5yBZ9U4hD3-ty6tWc3Rq2eGeN69wiZ6RwQ4O/pub?gid=0&single=true&output=csv";
-  const FAMILY_TITLE = "Keluarga Besar kasnawi Jawul";
+  const SHEET_CSV_URL = "GANTI_DENGAN_LINK_CSV_GOOGLE_SHEETS_KAMU";
+  const FAMILY_TITLE = "Keluarga Besar Wijaya";
   const FAMILY_SUBTITLE = "Menelusuri garis keturunan, generasi demi generasi.";
 
   const SAMPLE_CSV = `id,nama,kk,status_kk,lahir,wafat,id_ortu,id_pasangan,keterangan
@@ -285,7 +286,7 @@ P008,Bagas Wijaya,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
     const depth = {};
     let changed = true;
     let guard = 0;
-    while(changed && guard < 50){
+    while(changed && guard < 300){
       changed = false;
       guard++;
       list.forEach(p => {
@@ -310,14 +311,14 @@ P008,Bagas Wijaya,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
   function buildTree(csvText){
     const parsed = Papa.parse(csvText.trim(), { header: true, skipEmptyLines: true });
     const list = parsed.data.map(r => ({
-      id: (r.id||"").trim(),
+      id: (r.id||"").trim().toUpperCase(),
       nama: (r.nama||"").trim(),
-      kk: (r.kk||"").trim(),
+      kk: (r.kk||"").trim().toUpperCase(),
       status_kk: (r.status_kk||"").trim(),
       lahir: (r.lahir||"").trim(),
       wafat: (r.wafat||"").trim(),
-      id_ortu: (r.id_ortu||"").trim(),
-      id_pasangan: (r.id_pasangan||"").trim(),
+      id_ortu: (r.id_ortu||"").trim().toUpperCase(),
+      id_pasangan: (r.id_pasangan||"").trim().toUpperCase(),
       keterangan: (r.keterangan||"").trim()
     })).filter(p => p.id && p.nama);
 

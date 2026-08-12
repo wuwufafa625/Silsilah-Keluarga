@@ -249,8 +249,8 @@
   const FAMILY_SUBTITLE = "Menelusuri garis keturunan, generasi demi generasi.";
 
   const SAMPLE_CSV = `id,nama,kk,status_kk,lahir,wafat,id_ortu,id_pasangan,keterangan
-P001,Suryanto kasnawi Jawul,KK01,Kepala Keluarga,1928,2005,,P001b,Pendiri keluarga
-P001b,Rahayu kasnawi Jawul,KK01,Istri,1932,2010,,P001,
+P001,Suryanto Wijaya,KK01,Kepala Keluarga,1928,2005,,P001b,Pendiri keluarga
+P001b,Rahayu Wijaya,KK01,Istri,1932,2010,,P001,
 P002,Bambang Suryanto,KK02,Kepala Keluarga,1955,,P001,P002b,Anak pertama
 P002b,Ningsih,KK02,Istri,1958,,,P002,Menikah dari luar keluarga
 P003,Siti Suryani,KK03,Kepala Keluarga,1958,,P001,P003b,Anak kedua
@@ -260,7 +260,7 @@ P005,Dewi Anggraini,KK05,Kepala Keluarga,1980,,P002,P005b,Cucu dari Bambang
 P005b,Rudi Hartono,KK05,Suami,1978,,,P005,Menantu
 P006,Wulan Sari,KK03,Anak,1985,,P003,,Cucu dari Siti
 P007,Adi Nugraha,KK04,Anak,1990,,P004,,Cucu dari Herman
-P008,Bagas kasnawi Jawul,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
+P008,Bagas Wijaya,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
 
   document.getElementById('familyTitle').textContent = FAMILY_TITLE;
   document.getElementById('familySubtitle').textContent = FAMILY_SUBTITLE;
@@ -343,8 +343,24 @@ P008,Bagas kasnawi Jawul,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
       '<span class="stat-pill">' + kks.size + ' kartu keluarga</span>';
   }
 
-  function isBloodline(p){
-    return !!p.id_ortu || (!p.id_pasangan);
+  const GEN_LABELS = ["Leluhur","Anak","Cucu","Cicit","Canggah","Wareng"];
+  function genLabel(g){
+    return GEN_LABELS[g] || ('Turunan ke-' + (g+1));
+  }
+
+  // Menentukan siapa yang tampil sebagai kartu utama pada satu pasangan,
+  // supaya pasangan tidak tampil dobel sebagai dua baris terpisah.
+  function isPrimary(p){
+    if(p.id_ortu) return true;              // anak dari orang yang diketahui -> jelas garis darah
+    if(!p.id_pasangan) return true;         // tidak punya pasangan tercatat -> tampil sendiri
+    const spouse = people[p.id_pasangan];
+    if(!spouse) return true;
+    if(spouse.id_ortu) return false;        // pasangannya adalah garis darah -> ini yang "menikah masuk", disembunyikan
+    // Keduanya sama-sama tanpa id_ortu (pasangan leluhur/generasi pembuka):
+    const isKepala = s => (s.status_kk || '').toLowerCase().includes('kepala');
+    if(isKepala(p)) return true;
+    if(isKepala(spouse)) return false;
+    return p.id <= spouse.id;               // fallback: pilih salah satu secara konsisten
   }
 
   function personLabel(p){
@@ -357,11 +373,13 @@ P008,Bagas kasnawi Jawul,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
     const root = document.getElementById('tree');
     root.innerHTML = "";
 
+    if(query){
+      const allMatches = list.filter(p => p.nama.toLowerCase().includes(query.toLowerCase()));
+      if(allMatches.length === 1) openMember = allMatches[0].id;
+    }
+
     const byGen = {};
     list.forEach(p => {
-      if(!isBloodline(p) && p.id_pasangan && byGen[p.gen] !== undefined){
-        // spouse handled inline under their partner, skip standalone row
-      }
       if(!byGen[p.gen]) byGen[p.gen] = [];
       byGen[p.gen].push(p);
     });
@@ -370,9 +388,7 @@ P008,Bagas kasnawi Jawul,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
     let anyVisible = false;
 
     genKeys.forEach(g => {
-      const members = byGen[g]
-        .filter(p => isBloodline(p) || !p.id_ortu === false ? true : true)
-        .filter(p => isBloodline(p));
+      const members = byGen[g].filter(p => isPrimary(p));
       const q = query.toLowerCase();
       const visibleMembers = members.filter(p => {
         if(!q) return true;
@@ -391,7 +407,7 @@ P008,Bagas kasnawi Jawul,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
       header.className = 'gen-header' + (isOpen ? ' open' : '');
       header.innerHTML =
         '<span class="left"><span class="roman">Generasi ' + romanize(g) + '</span>' +
-        '<span class="count">&middot; ' + visibleMembers.length + ' orang</span></span>' +
+        '<span class="count">&middot; ' + genLabel(g) + ' &middot; ' + visibleMembers.length + ' orang</span></span>' +
         '<svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
       header.onclick = () => { openGen[g] = !openGen[g]; renderAll(); };
       block.appendChild(header);

@@ -325,6 +325,13 @@ P008,Bagas Wijaya,KK05,Anak,2006,,P005,,Cicit dari Bambang`;
     people = {};
     list.forEach(p => people[p.id] = p);
 
+    // Lengkapi pasangan otomatis walau id_pasangan cuma diisi di salah satu sisi
+    list.forEach(p => {
+      if(p.id_pasangan && people[p.id_pasangan] && !people[p.id_pasangan].id_pasangan){
+        people[p.id_pasangan].id_pasangan = p.id;
+      }
+    });
+
     const depth = computeGenerations(list);
     list.forEach(p => p.gen = depth[p.id]);
 
